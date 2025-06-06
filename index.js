@@ -1,83 +1,49 @@
-const bedrock = require('bedrock-protocol');
+const bedrock = require('minecraft-protocol-bedrock');
 const fs = require('fs');
-
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-const PASSWORD = "BedrockBotPvp22"; // for /register and /login
 
 const client = bedrock.createClient({
   host: config.host,
   port: config.port,
   username: config.username,
-  offline: true // must be true for cracked servers
+  offline: true
 });
 
-let loggedIn = false;
-
-client.on('join', () => {
-  console.log('✅ Bot joined the server!');
-
-  setTimeout(() => {
-    client.queue('text', {
-      type: 'chat',
-      needs_translation: false,
-      source_name: config.username,
-      xuid: '',
-      platform_chat_id: '',
-      message: `/register ${PASSWORD} ${PASSWORD}`
-    });
-  }, 1000);
-
-  setTimeout(() => {
-    client.queue('text', {
-      type: 'chat',
-      needs_translation: false,
-      source_name: config.username,
-      xuid: '',
-      platform_chat_id: '',
-      message: `/login ${PASSWORD}`
-    });
-  }, 3000);
+client.on('connect', () => {
+  console.log('✅ Connected to server');
 });
 
-client.on('text', (packet) => {
-  const msg = packet.message.toLowerCase();
+client.on('spawn', () => {
+  console.log('✅ Spawned in the world');
+  // Send register and login commands
+  setTimeout(() => client.write('chat', { message: `/register ${config.password} ${config.password}` }), 2000);
+  setTimeout(() => client.write('chat', { message: `/login ${config.password}` }), 5000);
+  setTimeout(() => client.write('chat', { message: '✅ Bot is online! Type !help' }), 7000);
+});
 
-  if (msg.includes('successfully logged in') || msg.includes('welcome')) {
-    loggedIn = true;
-    console.log('✅ Auto-login success!');
-    client.queue('text', {
-      type: 'chat',
-      needs_translation: false,
-      source_name: config.username,
-      xuid: '',
-      platform_chat_id: '',
-      message: '🤖 Bot is online! Type !help for commands.'
-    });
+client.on('chat', (packet) => {
+  const message = packet.message.toLowerCase();
+  if (!message.includes('!')) return;
+
+  if (message.includes('!help')) {
+    client.write('chat', { message: 'Commands: !start, !stop, !sleep, !pvp, !armor, !removearmor' });
   }
-
-  // Handle chat commands after login
-  if (!loggedIn || packet.source_name === config.username) return;
-
-  switch (msg) {
-    case '!help':
-      sendChat("Commands: !ping, !sleep (demo)");
-      break;
-    case '!ping':
-      sendChat("🏓 Pong!");
-      break;
-    case '!sleep':
-      sendChat("💤 Sleeping... (not implemented)");
-      break;
+  if (message.includes('!start')) {
+    client.write('chat', { message: '⏳ Starting...' });
+  }
+  if (message.includes('!stop')) {
+    client.write('chat', { message: '🛑 Stopping...' });
+  }
+  if (message.includes('!sleep')) {
+    client.write('chat', { message: '💤 Sleeping...' });
+  }
+  if (message.includes('!pvp')) {
+    client.write('chat', { message: '⚔️ PvP mode enabled!' });
+  }
+  if (message.includes('!armor')) {
+    client.write('chat', { message: '🛡️ Putting on armor...' });
+  }
+  if (message.includes('!removearmor')) {
+    client.write('chat', { message: '❌ Removing armor...' });
   }
 });
-
-function sendChat(text) {
-  client.queue('text', {
-    type: 'chat',
-    needs_translation: false,
-    source_name: config.username,
-    xuid: '',
-    platform_chat_id: '',
-    message: text
-  });
-}
