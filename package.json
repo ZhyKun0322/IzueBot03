@@ -7,5 +7,6 @@
   },
   "dependencies": {
     "bedrock-protocol": "^3.45.0"
+    "prismarine-auth": "^1.5.1"
   }
 }
