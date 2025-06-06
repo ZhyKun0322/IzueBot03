@@ -1,104 +1,83 @@
-const Bot = require('mcbe-bot');
+const bedrock = require('bedrock-protocol');
 const fs = require('fs');
 
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-const bot = new Bot(config);
+const PASSWORD = "YourSecurePassword"; // for /register and /login
 
-let pvpMode = false;
-let botActive = false;
+const client = bedrock.createClient({
+  host: config.host,
+  port: config.port,
+  username: config.username,
+  offline: true // must be true for cracked servers
+});
+
 let loggedIn = false;
 
-// Set your password here (for auto-register/login)
-const PASSWORD = "YourSecurePassword";
+client.on('join', () => {
+  console.log('✅ Bot joined the server!');
 
-bot.on('spawn', () => {
-  console.log('✅ Bot joined the server');
-  bot.chat('🤖 Hello! Starting auto login/register...');
-
-  // Auto-register and login sequence - adjust commands to your server plugin
   setTimeout(() => {
-    // Usually registration commands look like this, change if yours differ:
-    bot.chat(`/register ${PASSWORD} ${PASSWORD}`);
+    client.queue('text', {
+      type: 'chat',
+      needs_translation: false,
+      source_name: config.username,
+      xuid: '',
+      platform_chat_id: '',
+      message: `/register ${PASSWORD} ${PASSWORD}`
+    });
   }, 1000);
 
   setTimeout(() => {
-    bot.chat(`/login ${PASSWORD}`);
-  }, 4000);
+    client.queue('text', {
+      type: 'chat',
+      needs_translation: false,
+      source_name: config.username,
+      xuid: '',
+      platform_chat_id: '',
+      message: `/login ${PASSWORD}`
+    });
+  }, 3000);
 });
 
-bot.on('chat', (username, message) => {
-  if (username === bot.username) return;
+client.on('text', (packet) => {
+  const msg = packet.message.toLowerCase();
 
-  const msg = message.toLowerCase();
-
-  // Detect login success message — change this according to your server's messages!
-  if (msg.includes('logged in') || msg.includes('login successful')) {
+  if (msg.includes('successfully logged in') || msg.includes('welcome')) {
     loggedIn = true;
-    bot.chat('Login successful! Ready for commands.');
-    return;
+    console.log('✅ Auto-login success!');
+    client.queue('text', {
+      type: 'chat',
+      needs_translation: false,
+      source_name: config.username,
+      xuid: '',
+      platform_chat_id: '',
+      message: '🤖 Bot is online! Type !help for commands.'
+    });
   }
 
-  if (!loggedIn) return; // ignore commands until logged in
+  // Handle chat commands after login
+  if (!loggedIn || packet.source_name === config.username) return;
 
   switch (msg) {
     case '!help':
-      bot.chat('Commands: !start, !stop, !pvp, !pvpstop, !armor, !removearmor, !sleep');
+      sendChat("Commands: !ping, !sleep (demo)");
       break;
-
-    case '!start':
-      botActive = true;
-      bot.chat('✅ Bot activated.');
+    case '!ping':
+      sendChat("🏓 Pong!");
       break;
-
-    case '!stop':
-      botActive = false;
-      pvpMode = false;
-      bot.chat('🛑 Bot deactivated.');
-      break;
-
-    case '!pvp':
-      if (!botActive) {
-        bot.chat('❗ Use !start first.');
-        break;
-      }
-      pvpMode = true;
-      bot.chat('⚔️ PvP mode ON.');
-      attackLoop();
-      break;
-
-    case '!pvpstop':
-      pvpMode = false;
-      bot.chat('✋ PvP mode OFF.');
-      break;
-
-    case '!armor':
-      bot.chat('🛡️ Equipping armor... (simulated)');
-      break;
-
-    case '!removearmor':
-      bot.chat('❌ Removing armor... (simulated)');
-      break;
-
     case '!sleep':
-      bot.chat('💤 Sleeping... (placeholder)');
-      break;
-
-    default:
+      sendChat("💤 Sleeping... (not implemented)");
       break;
   }
 });
 
-function attackLoop() {
-  if (!pvpMode || !botActive) return;
-
-  const target = bot.nearestEntity(
-    (entity) => entity.type === 'player' && entity.username !== bot.username
-  );
-
-  if (target) {
-    bot.attack(target);
-    console.log(`⚔️ Attacking ${target.username}`);
-  }
-
-  setTimeout(attackLoop, 2000);
+function sendChat(text) {
+  client.queue('text', {
+    type: 'chat',
+    needs_translation: false,
+    source_name: config.username,
+    xuid: '',
+    platform_chat_id: '',
+    message: text
+  });
 }
