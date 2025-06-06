@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { createClient } = require('bedrock-protocol');
-const prismarineAuth = require('prismarine-auth');
+const { AuthFlow } = require('prismarine-auth');
 const fs = require('fs');
 
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
@@ -8,24 +8,25 @@ const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 async function startBot() {
   console.log('🔐 Logging in with Microsoft...');
   try {
-    const flow = await prismarineAuth.microsoft({
+    // Create auth flow instance for Microsoft login
+    const flow = new AuthFlow('microsoft', {
       username: process.env.MC_EMAIL,
       password: process.env.MC_PASSWORD
     });
 
+    // Authenticate to get tokens
+    await flow.authenticate();
+
     const client = createClient({
       host: config.host,
       port: config.port,
-      username: flow.user.username,
-      auth: flow.getAuth(),
+      username: flow.profile.name, // in bedrock this is the Xbox/Minecraft username
+      auth: flow.getAuth(),        // pass auth tokens
+      deviceType: 'Android',
       profilesFolder: './',
       skipPing: true,
       connectTimeout: 10000,
-      deviceType: 'Android',
-      authTitle: 'Minecraft',
-      onMsaCode: (data) => {
-        console.log(`🔑 Visit ${data.verification_uri} and enter code ${data.user_code}`);
-      }
+      authTitle: 'Minecraft'
     });
 
     client.on('connect', () => {
@@ -34,7 +35,6 @@ async function startBot() {
 
     client.on('spawn', () => {
       console.log('✅ Spawned in the world');
-      // Auto register/login commands - adjust timing if needed
       setTimeout(() => client.queue('text', { message: `/register ${config.password} ${config.password}` }), 2000);
       setTimeout(() => client.queue('text', { message: `/login ${config.password}` }), 5000);
       setTimeout(() => client.queue('text', { message: '✅ Bot is online! Type !help' }), 7000);
