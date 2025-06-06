@@ -1,7 +1,9 @@
 {
   "host": "KingdomOfYggdrasil.aternos.me",
   "port": 52364,
-  "username": "ZhyBEPvp",
-  "password": "ZhyBEPvp22",
-  "authmode": "microsoft"
+  "username": "kurozawashizumi@gmail.com",
+  "authMode": "microsoft",
+
+  "loginPassword": "InGameLogin123",  
+  "autoRegister": false
 }
