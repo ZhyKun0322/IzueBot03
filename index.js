@@ -2,7 +2,7 @@ const bedrock = require('bedrock-protocol');
 const fs = require('fs');
 
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-const PASSWORD = "YourSecurePassword"; // for /register and /login
+const PASSWORD = "BedrockBotPvp22"; // for /register and /login
 
 const client = bedrock.createClient({
   host: config.host,
