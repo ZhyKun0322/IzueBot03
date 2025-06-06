@@ -7,7 +7,7 @@
   },
   "dependencies": {
     "bedrock-protocol": "^3.45.0",
-    "prismarine-auth": "^1.5.1",
-    "dotenv": "^16.4.5"
+    "prismarine-auth": "^2.7.0",
+    "dotenv": "^16.5.0"
   }
 }
