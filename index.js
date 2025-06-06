@@ -1,32 +1,42 @@
 require('dotenv').config();
+const { microsoft } = require('prismarine-auth');
 const { createClient } = require('bedrock-protocol');
-const prismarineAuth = require('prismarine-auth');
 
 async function startBot() {
   try {
     console.log('🔐 Logging in with Microsoft...');
-
-    // Create an auth flow instance:
-    const flow = new prismarineAuth.MicrosoftAuth({
+    
+    // Step 1: Authenticate with Microsoft & Minecraft
+    const flow = await microsoft({
       username: process.env.MC_EMAIL,
-      password: process.env.MC_PASSWORD,
+      password: process.env.MC_PASSWORD
     });
-
-    await flow.login();
-
-    console.log('✅ Logged in as:', flow.getUsername());
-
+    console.log('✅ Logged in as:', flow.user.username);
+    
+    // Step 2: Connect to the Minecraft Bedrock server using the token
     const client = createClient({
-      host: 'your.server.ip',
-      port: 19132,
-      username: flow.getUsername(),
-      auth: flow.getAuth(),
+      host: 'KingdomOfYggdrasil.aternos.me',  // replace with your server IP
+      port: 52364,             // default Bedrock port
+      username: flow.user.username,
+      auth: flow.getAuth()
     });
-
-    client.on('connect', () => console.log('✅ Connected to server'));
-    client.on('spawn', () => console.log('✅ Spawned in game'));
-    client.on('text', packet => console.log('[Server]', packet.message));
-
+    
+    client.on('connect', () => {
+      console.log('✅ Connected to server');
+    });
+    
+    client.on('spawn', () => {
+      console.log('✅ Spawned in game');
+    });
+    
+    client.on('text', packet => {
+      console.log('[Server]', packet.message);
+    });
+    
+    client.on('error', (err) => {
+      console.error('❌ Client error:', err);
+    });
+    
   } catch (err) {
     console.error('❌ Error:', err);
   }
