@@ -1,6 +1,6 @@
 require('dotenv').config();
 const { createClient } = require('bedrock-protocol');
-const { AuthFlow } = require('prismarine-auth');
+const prismarineAuth = require('prismarine-auth');
 const fs = require('fs');
 
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
@@ -8,8 +8,11 @@ const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 async function startBot() {
   console.log('🔐 Logging in with Microsoft...');
   try {
-    // Create auth flow instance for Microsoft login
-    const flow = new AuthFlow('microsoft', {
+    // Get the auth flow factory function for Microsoft
+    const getMicrosoftAuth = prismarineAuth('microsoft');
+
+    // Create the auth flow with your credentials
+    const flow = getMicrosoftAuth({
       username: process.env.MC_EMAIL,
       password: process.env.MC_PASSWORD
     });
@@ -20,8 +23,8 @@ async function startBot() {
     const client = createClient({
       host: config.host,
       port: config.port,
-      username: flow.profile.name, // in bedrock this is the Xbox/Minecraft username
-      auth: flow.getAuth(),        // pass auth tokens
+      username: flow.profile.name, // Xbox/Minecraft username
+      auth: flow.getAuth(),
       deviceType: 'Android',
       profilesFolder: './',
       skipPing: true,
