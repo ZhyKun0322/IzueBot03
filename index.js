@@ -17,15 +17,8 @@ async function startBot() {
       host: config.host,
       port: config.port,
       username: flow.user.username,
-      profilesFolder: './',
-      authTitle: 'minecraft',
-      deviceType: 'Android',
-      skipPing: true,
-      connectTimeout: 10 * 1000,
-      onMsaCode: (data) => {
-        console.log(`🔑 Visit ${data.verification_uri} and enter code ${data.user_code}`);
-      },
-      auth: flow.getAuth()
+      auth: flow.getAuth(),
+      deviceType: 'Android',  // or your device type
     });
 
     client.on('connect', () => {
@@ -34,35 +27,35 @@ async function startBot() {
 
     client.on('spawn', () => {
       console.log('✅ Spawned in the world');
-      setTimeout(() => client.queue('text', { message: `/register ${config.password} ${config.password}` }), 2000);
-      setTimeout(() => client.queue('text', { message: `/login ${config.password}` }), 5000);
-      setTimeout(() => client.queue('text', { message: '✅ Bot is online! Type !help' }), 7000);
+      setTimeout(() => client.queue('chat', { message: `/register ${config.password} ${config.password}` }), 2000);
+      setTimeout(() => client.queue('chat', { message: `/login ${config.password}` }), 5000);
+      setTimeout(() => client.queue('chat', { message: '✅ Bot is online! Type !help' }), 7000);
     });
 
-    client.on('text', (packet) => {
+    client.on('chat', (packet) => {
       const message = packet.message.toLowerCase();
       if (!message.includes('!')) return;
 
       if (message.includes('!help')) {
-        client.queue('text', { message: 'Commands: !start, !stop, !sleep, !pvp, !armor, !removearmor' });
+        client.queue('chat', { message: 'Commands: !start, !stop, !sleep, !pvp, !armor, !removearmor' });
       }
       if (message.includes('!start')) {
-        client.queue('text', { message: '⏳ Starting...' });
+        client.queue('chat', { message: '⏳ Starting...' });
       }
       if (message.includes('!stop')) {
-        client.queue('text', { message: '🛑 Stopping...' });
+        client.queue('chat', { message: '🛑 Stopping...' });
       }
       if (message.includes('!sleep')) {
-        client.queue('text', { message: '💤 Sleeping...' });
+        client.queue('chat', { message: '💤 Sleeping...' });
       }
       if (message.includes('!pvp')) {
-        client.queue('text', { message: '⚔️ PvP mode enabled!' });
+        client.queue('chat', { message: '⚔️ PvP mode enabled!' });
       }
       if (message.includes('!armor')) {
-        client.queue('text', { message: '🛡️ Putting on armor...' });
+        client.queue('chat', { message: '🛡️ Putting on armor...' });
       }
       if (message.includes('!removearmor')) {
-        client.queue('text', { message: '❌ Removing armor...' });
+        client.queue('chat', { message: '❌ Removing armor...' });
       }
     });
 
