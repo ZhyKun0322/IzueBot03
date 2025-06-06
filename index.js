@@ -1,71 +1,77 @@
+const { authenticate } = require('prismarine-auth');
 const bedrock = require('bedrock-protocol');
-const { Authflow } = require('prismarine-auth');
 const fs = require('fs');
 const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 
-(async () => {
-  let xblAuth;
-
-  if (config.authMode === 'microsoft') {
-    console.log('🔐 Logging in with Microsoft...');
-    const flow = new Authflow(config.username, './auth_store', {
-      flow: 'msal',
-      authTitle: '00000000402b5328',
+async function startBot() {
+  console.log('🔐 Logging in with Microsoft...');
+  
+  const auth = await authenticate(
+    {
+      flow: 'msal', // Use device code login (suitable for Termux/phones)
+      authTitle: '00000000402b5328', // Minecraft client ID
       deviceType: 'Android'
-    });
-
-    xblAuth = await flow.getXboxToken();
-  }
+    },
+    (data) => {
+      // This function shows the login URL and user code in console
+      console.log(`[Login] Visit: ${data.verification_uri}`);
+      console.log(`[Login] Enter Code: ${data.user_code}`);
+    }
+  );
 
   const client = bedrock.createClient({
     host: config.host,
     port: config.port,
-    username: config.username,
-    profilesFolder: './auth_store',
-    offline: config.authMode !== 'microsoft',
-    xuid: xblAuth?.userXuid,
-    authTitle: 'Minecraft',
-    authToken: xblAuth?.token
+    username: auth.profile.name,
+    authTitle: '00000000402b5328',
+    deviceType: 'Android',
+    profilesFolder: './auth', // saves token for re-use
+    offline: false,
+    skinData: auth.profile.skinData
   });
 
-  client.on('join', () => {
+  client.on('connect', () => {
     console.log('✅ Connected to server');
   });
 
   client.on('spawn', () => {
     console.log('✅ Spawned in the world');
-
-    // 🔐 Handle server login security (SimpleAuth, etc)
-    if (config.autoRegister) {
-      setTimeout(() => sendChat(`/register ${config.loginPassword} ${config.loginPassword}`), 2000);
-    } else {
-      setTimeout(() => sendChat(`/login ${config.loginPassword}`), 2000);
-    }
-
-    setTimeout(() => sendChat('✅ Bot is online! Type !help'), 4000);
+    // Auto register/login
+    setTimeout(() => client.queue('text', { message: `/register ${config.password} ${config.password}`, needsTranslation: false }), 2000);
+    setTimeout(() => client.queue('text', { message: `/login ${config.password}`, needsTranslation: false }), 5000);
+    setTimeout(() => client.queue('text', { message: '✅ Bot is online! Type !help' }), 7000);
   });
 
   client.on('text', (packet) => {
     const msg = packet.message.toLowerCase();
     if (!msg.includes('!')) return;
 
-    if (msg.includes('!help')) sendChat('Commands: !start, !stop, !sleep, !pvp, !armor, !removearmor');
-    if (msg.includes('!start')) sendChat('⏳ Starting...');
-    if (msg.includes('!stop')) sendChat('🛑 Stopping...');
-    if (msg.includes('!sleep')) sendChat('💤 Sleeping...');
-    if (msg.includes('!pvp')) sendChat('⚔️ PvP mode enabled!');
-    if (msg.includes('!armor')) sendChat('🛡️ Putting on armor...');
-    if (msg.includes('!removearmor')) sendChat('❌ Removing armor...');
+    if (msg.includes('!help')) {
+      client.queue('text', { message: 'Commands: !start, !stop, !sleep, !pvp, !armor, !removearmor', needsTranslation: false });
+    }
+    if (msg.includes('!start')) {
+      client.queue('text', { message: '⏳ Starting...', needsTranslation: false });
+    }
+    if (msg.includes('!stop')) {
+      client.queue('text', { message: '🛑 Stopping...', needsTranslation: false });
+    }
+    if (msg.includes('!sleep')) {
+      client.queue('text', { message: '💤 Sleeping...', needsTranslation: false });
+    }
+    if (msg.includes('!pvp')) {
+      client.queue('text', { message: '⚔️ PvP mode enabled!', needsTranslation: false });
+    }
+    if (msg.includes('!armor')) {
+      client.queue('text', { message: '🛡️ Putting on armor...', needsTranslation: false });
+    }
+    if (msg.includes('!removearmor')) {
+      client.queue('text', { message: '❌ Removing armor...', needsTranslation: false });
+    }
   });
 
-  function sendChat(message) {
-    client.queue('text', {
-      type: 'chat',
-      needs_translation: false,
-      source_name: config.username,
-      message: message,
-      xuid: '',
-      platform_chat_id: ''
-    });
-  }
-})();
+  client.on('disconnect', (reason) => {
+    console.log('❌ Disconnected:', reason);
+  });
+}
+
+startBot().catch(console.error);
