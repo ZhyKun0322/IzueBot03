@@ -1,27 +1,29 @@
 require('dotenv').config();
-const { microsoftDeviceCode } = require('prismarine-auth');
+const { MicrosoftAuthFlow } = require('prismarine-auth');
 const { createClient } = require('bedrock-protocol');
 
 async function startBot() {
   try {
     console.log('🔐 Waiting for Microsoft login...');
 
-    const flow = await microsoftDeviceCode({
-      flow: 'msal', // Use MSAL device code login
+    const flow = new MicrosoftAuthFlow({
+      flow: 'msal',
     });
 
-    console.log('✅ Logged in as:', flow.user?.username || 'Unknown');
+    const auth = await flow.getAuth();
+
+    console.log('✅ Logged in as:', auth.user?.username || 'unknown');
 
     const client = createClient({
-      host: 'KingdomOfYggdrasil.aternos.me',
-      port: 52364,
-      username: flow.user.username,
-      auth: flow.getAuth(),
+      host: 'your.server.ip',
+      port: 19132,
+      username: auth.user.username,
+      auth
     });
 
     client.on('connect', () => console.log('✅ Connected to server'));
     client.on('spawn', () => console.log('✅ Spawned in game'));
-    client.on('text', packet => console.log('[Chat]', packet.message));
+    client.on('text', packet => console.log('[Server]', packet.message));
     client.on('error', err => console.error('❌ Client error:', err));
 
   } catch (err) {
