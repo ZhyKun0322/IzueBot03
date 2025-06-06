@@ -1,5 +1,5 @@
+const { Authflow } = require('prismarine-auth');
 const { createClient } = require('bedrock-protocol');
-const { microsoftAuth } = require('prismarine-auth');
 const fs = require('fs');
 
 const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
@@ -7,15 +7,14 @@ const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
 async function startBot() {
   try {
     console.log('🔐 Logging in with Microsoft...');
-    const { accessToken } = await microsoftAuth(config.username, config.password);
+    const flow = new Authflow(config.username, './auth', { password: config.password });
+    const { accessToken } = await flow.getMinecraftToken();
 
     const client = createClient({
       host: config.host,
       port: config.port,
       username: config.username,
       offline: false,
-      authTitle: 'minecraft',
-      profilesFolder: './profiles',
       auth: 'microsoft',
       accessToken
     });
@@ -29,7 +28,6 @@ async function startBot() {
 
     client.on('text', (packet) => {
       const msg = packet.message.toLowerCase();
-
       if (msg.includes('!help')) client.queue('chat', { message: 'Commands: !start, !stop, !sleep, !pvp, !armor, !removearmor' });
       if (msg.includes('!start')) client.queue('chat', { message: '⏳ Starting...' });
       if (msg.includes('!stop')) client.queue('chat', { message: '🛑 Stopping...' });
