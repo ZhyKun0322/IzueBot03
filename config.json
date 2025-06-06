@@ -1,9 +1,7 @@
 {
+  "username": "kurozawashizumi@gmail.com",
+  "password": "JuanKim#0322",
   "host": "KingdomOfYggdrasil.aternos.me",
   "port": 52364,
-  "username": "kurozawashizumi@gmail.com",
-  "authMode": "microsoft",
-
-  "loginPassword": "InGameLogin123",  
-  "autoRegister": false
+  "loginPass": "ZhyBEPvp22"
 }
