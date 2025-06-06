@@ -1,0 +1,6 @@
+{
+  "host": "KingdomOfYggdrasil.aternos.me",
+  "port": 52364,
+  "username": "KuroBot123",
+  "offline": true
+}
