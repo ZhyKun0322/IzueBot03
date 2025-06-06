@@ -1,40 +1,69 @@
-const { Authflow } = require('prismarine-auth');
+require('dotenv').config();
 const { createClient } = require('bedrock-protocol');
+const { microsoft } = require('prismarine-auth');
 const fs = require('fs');
 
-const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
+const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
 
 async function startBot() {
+  console.log('🔐 Logging in with Microsoft...');
   try {
-    console.log('🔐 Logging in with Microsoft...');
-    const flow = new Authflow(config.username, './auth', { password: config.password });
-    const { accessToken } = await flow.getMinecraftToken();
+    const flow = await microsoft({
+      username: process.env.MC_EMAIL,
+      password: process.env.MC_PASSWORD
+    });
 
     const client = createClient({
       host: config.host,
       port: config.port,
-      username: config.username,
-      offline: false,
-      auth: 'microsoft',
-      accessToken
+      username: flow.user.username,
+      profilesFolder: './',
+      authTitle: 'minecraft',
+      deviceType: 'Android',
+      skipPing: true,
+      connectTimeout: 10 * 1000,
+      onMsaCode: (data) => {
+        console.log(`🔑 Visit ${data.verification_uri} and enter code ${data.user_code}`);
+      },
+      auth: flow.getAuth()
     });
 
-    client.on('join', () => {
-      console.log('✅ Joined the server');
-      setTimeout(() => client.queue('chat', { message: `/register ${config.loginPass} ${config.loginPass}` }), 3000);
-      setTimeout(() => client.queue('chat', { message: `/login ${config.loginPass}` }), 5000);
-      setTimeout(() => client.queue('chat', { message: '✅ Bot is online! Type !help' }), 7000);
+    client.on('connect', () => {
+      console.log('✅ Connected to server');
+    });
+
+    client.on('spawn', () => {
+      console.log('✅ Spawned in the world');
+      setTimeout(() => client.queue('text', { message: `/register ${config.password} ${config.password}` }), 2000);
+      setTimeout(() => client.queue('text', { message: `/login ${config.password}` }), 5000);
+      setTimeout(() => client.queue('text', { message: '✅ Bot is online! Type !help' }), 7000);
     });
 
     client.on('text', (packet) => {
-      const msg = packet.message.toLowerCase();
-      if (msg.includes('!help')) client.queue('chat', { message: 'Commands: !start, !stop, !sleep, !pvp, !armor, !removearmor' });
-      if (msg.includes('!start')) client.queue('chat', { message: '⏳ Starting...' });
-      if (msg.includes('!stop')) client.queue('chat', { message: '🛑 Stopping...' });
-      if (msg.includes('!sleep')) client.queue('chat', { message: '💤 Sleeping...' });
-      if (msg.includes('!pvp')) client.queue('chat', { message: '⚔️ PvP mode enabled!' });
-      if (msg.includes('!armor')) client.queue('chat', { message: '🛡️ Putting on armor...' });
-      if (msg.includes('!removearmor')) client.queue('chat', { message: '❌ Removing armor...' });
+      const message = packet.message.toLowerCase();
+      if (!message.includes('!')) return;
+
+      if (message.includes('!help')) {
+        client.queue('text', { message: 'Commands: !start, !stop, !sleep, !pvp, !armor, !removearmor' });
+      }
+      if (message.includes('!start')) {
+        client.queue('text', { message: '⏳ Starting...' });
+      }
+      if (message.includes('!stop')) {
+        client.queue('text', { message: '🛑 Stopping...' });
+      }
+      if (message.includes('!sleep')) {
+        client.queue('text', { message: '💤 Sleeping...' });
+      }
+      if (message.includes('!pvp')) {
+        client.queue('text', { message: '⚔️ PvP mode enabled!' });
+      }
+      if (message.includes('!armor')) {
+        client.queue('text', { message: '🛡️ Putting on armor...' });
+      }
+      if (message.includes('!removearmor')) {
+        client.queue('text', { message: '❌ Removing armor...' });
+      }
     });
 
   } catch (err) {
