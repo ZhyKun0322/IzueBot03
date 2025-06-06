@@ -1,0 +1,12 @@
+{
+  "name": "bedrock-bot",
+  "version": "1.0.0",
+  "description": "Minecraft Bedrock bot for Aternos with auto login",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "mcbe-bot": "^1.0.4"
+  }
+}
