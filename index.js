@@ -1,21 +1,21 @@
 require('dotenv').config();
-const { AuthFlow } = require('prismarine-auth');
+const { microsoft } = require('prismarine-auth');
 const { createClient } = require('bedrock-protocol');
 
 async function startBot() {
   try {
     console.log('🔐 Logging in with Microsoft...');
-    const flow = new AuthFlow('microsoft', {
+    const flow = await microsoft({
       username: process.env.MC_EMAIL,
       password: process.env.MC_PASSWORD
     });
-    await flow.authenticate();
-    console.log('✅ Logged in as:', flow.profile.name);
+
+    console.log('✅ Logged in as:', flow.user.username);
 
     const client = createClient({
       host: 'your.server.ip',
       port: 19132,
-      username: flow.profile.name,
+      username: flow.user.username,
       auth: flow.getAuth()
     });
 
